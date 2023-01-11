@@ -1,12 +1,12 @@
 {
-  "name": "electron-react-boilerplate",
-  "version": "4.6.0",
-  "description": "A foundation for scalable desktop apps",
-  "license": "MIT",
+  "name": "exiftor",
+  "version": "0.1.0",
+  "description": "An electron app for viewing and editing exif metadata of images",
+  "license": "GPL-3.0-or-later",
   "author": {
-    "name": "Electron React Boilerplate Maintainers",
-    "email": "electronreactboilerplate@gmail.com",
-    "url": "https://github.com/electron-react-boilerplate"
+    "name": "Silvio Brändle",
+    "email": "silvio@silviobraendle.ch",
+    "url": "https://silviobraendle.ch"
   },
   "main": "./dist/main/main.js",
   "scripts": {
