@@ -1,23 +1,41 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-
-export type Channels = 'ipc-example';
+import type { ChannelArgs, ChannelResults, Channel } from '../common/ipc-types';
 
 const electronHandler = {
   ipcRenderer: {
-    sendMessage(channel: Channels, args: unknown[]) {
-      ipcRenderer.send(channel, args);
+    sendMessage<T extends Channel>(channel: T, arg: ChannelArgs[T]) {
+      ipcRenderer.send(channel, arg);
     },
-    on(channel: Channels, func: (...args: unknown[]) => void) {
-      const subscription = (_event: IpcRendererEvent, ...args: unknown[]) =>
-        func(...args);
+    invoke<T extends Channel>(
+      channel: T,
+      arg: ChannelArgs[T]
+    ): Promise<ChannelResults[T]> {
+      return ipcRenderer.invoke(channel, arg);
+    },
+    on<T extends Channel>(channel: T, func: (arg?: ChannelResults[T]) => void) {
+      const subscription = (
+        _event: IpcRendererEvent,
+        ...args: ChannelResults[T][]
+      ) => {
+        let arg: ChannelResults[T] | undefined;
+        if (args.length > 0) [arg] = args;
+        func(arg);
+      };
       ipcRenderer.on(channel, subscription);
 
       return () => {
         ipcRenderer.removeListener(channel, subscription);
       };
     },
-    once(channel: Channels, func: (...args: unknown[]) => void) {
-      ipcRenderer.once(channel, (_event, ...args) => func(...args));
+    once<T extends Channel>(
+      channel: T,
+      func: (arg?: ChannelResults[T]) => void
+    ) {
+      ipcRenderer.once(channel, (_event, ...args) => {
+        let arg: ChannelResults[T] | undefined;
+        if (args.length > 0) [arg] = args;
+        func(arg);
+      });
     },
   },
 };

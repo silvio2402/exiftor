@@ -9,11 +9,20 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
+import { homedir } from 'os';
+import fs from 'fs';
+import sharp from 'sharp';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import type {
+  ReadDirArgs,
+  ReadDirResult,
+  ReadImgArgs,
+  ReadImgResult,
+} from '../common/ipc-types';
 
 class AppUpdater {
   constructor() {
@@ -25,10 +34,63 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-ipcMain.on('ipc-example', async (event, arg) => {
+ipcMain.handle('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
+  return msgTemplate('pong');
+});
+
+ipcMain.handle('read-dir', async (event, arg: ReadDirArgs) => {
+  let { path: dirPath } = arg;
+  const { excludeFiles } = arg;
+  dirPath = dirPath.replace('%HOME%', homedir());
+  const files = fs.readdirSync(dirPath, { withFileTypes: true });
+  let msgEntries: ReadDirResult['entries'] = [];
+  msgEntries = files.flatMap((file) => {
+    const isDirectory = file.isDirectory();
+    const isFile = file.isFile();
+    const isSymbolicLink = file.isSymbolicLink();
+    return isDirectory || isFile || isSymbolicLink
+      ? {
+          name: file.name,
+          isDirectory,
+          isFile,
+          isSymbolicLink,
+        }
+      : [];
+  });
+  if (excludeFiles) {
+    msgEntries = msgEntries.filter((entry) => !entry.isFile);
+  }
+  const msg: ReadDirResult = {
+    entries: msgEntries,
+  };
+  return msg;
+});
+
+const readImage = async (imgPath: string, thumbnail: boolean) => {
+  let img = sharp(imgPath, { sequentialRead: true }).webp({
+    nearLossless: !thumbnail,
+  });
+  const resizeOptions: sharp.ResizeOptions = {
+    withoutEnlargement: true,
+    fit: 'inside',
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+  };
+  if (thumbnail) img = img.resize(256, 256, resizeOptions);
+  else img = img.resize(1200, 800, resizeOptions);
+  return img.toBuffer();
+};
+
+ipcMain.handle('read-img', async (event, arg: ReadImgArgs) => {
+  let { path: imgPath } = arg;
+  const { thumbnail } = arg;
+  imgPath = imgPath.replace('%HOME%', homedir());
+  const imgBuffer = await readImage(imgPath, thumbnail);
+  const msg: ReadImgResult = {
+    imgBuffer,
+  };
+  return msg;
 });
 
 if (process.env.NODE_ENV === 'production') {
