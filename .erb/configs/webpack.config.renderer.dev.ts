@@ -7,6 +7,7 @@ import chalk from 'chalk';
 import { merge } from 'webpack-merge';
 import { execSync, spawn } from 'child_process';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
+import autoprefixer from 'autoprefixer';
 import baseConfig from './webpack.config.base';
 import webpackPaths from './webpack.paths';
 import checkNodeEnv from '../scripts/check-node-env';
@@ -16,6 +17,35 @@ import checkNodeEnv from '../scripts/check-node-env';
 if (process.env.NODE_ENV === 'production') {
   checkNodeEnv('development');
 }
+
+const CSSModuleLoader = {
+  loader: 'css-loader',
+  options: {
+    modules: { auto: true, localIdentName: '[local]__[hash:base64:5]' },
+    sourceMap: true,
+    // minimize: true,
+  },
+};
+
+const CSSLoader = {
+  loader: 'css-loader',
+  options: {
+    modules: false,
+    sourceMap: true,
+    // minimize: true,
+  },
+};
+
+const postCSSLoader = {
+  loader: 'postcss-loader',
+  options: {
+    // ident: 'postcss',
+    sourceMap: true,
+    postcssOptions: {
+      plugins: () => [autoprefixer()],
+    },
+  },
+};
 
 const port = process.env.PORT || 1212;
 const manifest = path.resolve(webpackPaths.dllPath, 'renderer.json');
@@ -63,25 +93,43 @@ const configuration: webpack.Configuration = {
   module: {
     rules: [
       {
-        test: /\.s?(c|a)ss$/,
-        use: [
-          'style-loader',
+        oneOf: [
           {
-            loader: 'css-loader',
-            options: {
-              modules: true,
-              sourceMap: true,
-              importLoaders: 1,
-            },
+            test: /\.scss$/,
+            exclude: /\.module\.scss$/,
+            use: ['style-loader', CSSLoader, postCSSLoader, 'sass-loader'],
           },
-          'sass-loader',
+          {
+            test: /\.module\.scss$/,
+            use: [
+              'style-loader',
+              CSSModuleLoader,
+              postCSSLoader,
+              'sass-loader',
+            ],
+          },
+          {
+            test: /\.s?(c|a)ss$/,
+            use: [
+              'style-loader',
+              {
+                loader: 'css-loader',
+                options: {
+                  modules: true,
+                  sourceMap: true,
+                  importLoaders: 1,
+                },
+              },
+              'sass-loader',
+            ],
+            include: /\.module\.s?(c|a)ss$/,
+          },
+          {
+            test: /\.s?css$/,
+            use: ['style-loader', 'css-loader', 'sass-loader'],
+            exclude: /\.module\.s?(c|a)ss$/,
+          },
         ],
-        include: /\.module\.s?(c|a)ss$/,
-      },
-      {
-        test: /\.s?css$/,
-        use: ['style-loader', 'css-loader', 'sass-loader'],
-        exclude: /\.module\.s?(c|a)ss$/,
       },
       // Fonts
       {

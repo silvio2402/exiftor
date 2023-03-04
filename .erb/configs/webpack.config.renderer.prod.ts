@@ -10,6 +10,7 @@ import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 import CssMinimizerPlugin from 'css-minimizer-webpack-plugin';
 import { merge } from 'webpack-merge';
 import TerserPlugin from 'terser-webpack-plugin';
+import autoprefixer from 'autoprefixer';
 import baseConfig from './webpack.config.base';
 import webpackPaths from './webpack.paths';
 import checkNodeEnv from '../scripts/check-node-env';
@@ -17,6 +18,35 @@ import deleteSourceMaps from '../scripts/delete-source-maps';
 
 checkNodeEnv('production');
 deleteSourceMaps();
+
+const CSSModuleLoader = {
+  loader: 'css-loader',
+  options: {
+    modules: { auto: true, localIdentName: '[local]__[hash:base64:5]' },
+    sourceMap: true,
+    // minimize: true,
+  },
+};
+
+const CSSLoader = {
+  loader: 'css-loader',
+  options: {
+    modules: false,
+    sourceMap: true,
+    // minimize: true,
+  },
+};
+
+const postCSSLoader = {
+  loader: 'postcss-loader',
+  options: {
+    // ident: 'postcss',
+    sourceMap: true,
+    postcssOptions: {
+      plugins: () => [autoprefixer()],
+    },
+  },
+};
 
 const configuration: webpack.Configuration = {
   devtool: 'source-map',
@@ -39,25 +69,43 @@ const configuration: webpack.Configuration = {
   module: {
     rules: [
       {
-        test: /\.s?(a|c)ss$/,
-        use: [
-          MiniCssExtractPlugin.loader,
+        oneOf: [
           {
-            loader: 'css-loader',
-            options: {
-              modules: true,
-              sourceMap: true,
-              importLoaders: 1,
-            },
+            test: /\.scss$/,
+            exclude: /\.module\.scss$/,
+            use: ['style-loader', CSSLoader, postCSSLoader, 'sass-loader'],
           },
-          'sass-loader',
+          {
+            test: /\.module\.scss$/,
+            use: [
+              'style-loader',
+              CSSModuleLoader,
+              postCSSLoader,
+              'sass-loader',
+            ],
+          },
+          {
+            test: /\.s?(a|c)ss$/,
+            use: [
+              MiniCssExtractPlugin.loader,
+              {
+                loader: 'css-loader',
+                options: {
+                  modules: true,
+                  sourceMap: true,
+                  importLoaders: 1,
+                },
+              },
+              'sass-loader',
+            ],
+            include: /\.module\.s?(c|a)ss$/,
+          },
+          {
+            test: /\.s?(a|c)ss$/,
+            use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
+            exclude: /\.module\.s?(c|a)ss$/,
+          },
         ],
-        include: /\.module\.s?(c|a)ss$/,
-      },
-      {
-        test: /\.s?(a|c)ss$/,
-        use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
-        exclude: /\.module\.s?(c|a)ss$/,
       },
       // Fonts
       {
