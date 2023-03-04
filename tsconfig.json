@@ -14,7 +14,8 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "outDir": ".erb/dll",
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
   },
   "exclude": ["test", "release/build", "release/app/dist", ".erb/dll"]
 }
