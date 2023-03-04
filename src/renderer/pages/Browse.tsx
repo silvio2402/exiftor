@@ -28,7 +28,7 @@ const Browse = () => {
   useEffect(() => {
     let currLocationState;
     if (typeof location.state !== 'string') {
-      currLocationState = ['%HOME%', 'Pictures'].join(path.sep) + path.sep;
+      currLocationState = ['%HOME%'].join(path.sep) + path.sep;
       navigate(location.pathname, {
         state: currLocationState,
       });
