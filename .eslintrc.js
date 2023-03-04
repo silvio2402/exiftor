@@ -1,6 +1,7 @@
 module.exports = {
   extends: 'erb',
   rules: {
+    'prettier/prettier': 0,
     // A temporary hack related to IDE not resolving correct package.json
     'import/no-extraneous-dependencies': 'off',
     'import/no-unresolved': 'error',
