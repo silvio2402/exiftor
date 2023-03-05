@@ -107,7 +107,8 @@ const Browse = () => {
                   }
                 : undefined
             }
-            key={seg}
+            // eslint-disable-next-line react/no-array-index-key
+            key={i}
             onClick={() =>
               navigate(location.pathname, {
                 state:
@@ -134,7 +135,7 @@ const Browse = () => {
               supportedExtensions.includes(path.parse(file.name).ext)
           )
           .map((file) => (
-            <div className={Styles.gridItem}>
+            <div className={Styles.gridItem} key={file.name}>
               {file.isFile &&
               supportedExtensions.includes(path.parse(file.name).ext) ? (
                 <Image
