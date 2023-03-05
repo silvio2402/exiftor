@@ -1,5 +1,6 @@
 {
   "description": "An electron app for viewing and editing exif metadata of images",
+  "version": "0.1.0",
   "keywords": [
     "electron",
     "react",
