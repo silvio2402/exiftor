@@ -11,12 +11,11 @@
 import path from 'path';
 import { homedir } from 'os';
 import fs from 'fs';
-import sharp from 'sharp';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
+import { resolveHtmlPath, readImage } from './util';
 import type {
   ReadDirArgs,
   ReadDirResult,
@@ -67,20 +66,6 @@ ipcMain.handle('read-dir', async (event, arg: ReadDirArgs) => {
   };
   return msg;
 });
-
-const readImage = async (imgPath: string, thumbnail: boolean) => {
-  let img = sharp(imgPath, { sequentialRead: true }).webp({
-    nearLossless: !thumbnail,
-  });
-  const resizeOptions: sharp.ResizeOptions = {
-    withoutEnlargement: true,
-    fit: 'inside',
-    background: { r: 0, g: 0, b: 0, alpha: 0 },
-  };
-  if (thumbnail) img = img.resize(256, 256, resizeOptions);
-  else img = img.resize(1200, 800, resizeOptions);
-  return img.toBuffer();
-};
 
 ipcMain.handle('read-img', async (event, arg: ReadImgArgs) => {
   let { path: imgPath } = arg;
