@@ -40,6 +40,7 @@ const Browse = () => {
     const args: ReadDirArgs = {
       path: currLocationState,
     };
+    setEntries([]);
     ipcRenderer
       .invoke('read-dir', args)
       .then((result) => {
