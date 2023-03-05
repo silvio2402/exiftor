@@ -1,72 +1,94 @@
+import React from 'react';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
+import { useMediaQuery } from 'react-responsive';
 import handleError from 'renderer/errorhandling';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import { Typography, ConfigProvider, Layout, theme } from 'antd';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { ConfigProvider, Layout, Result, Button, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
 import Home from 'renderer/pages/Home';
 import Browse from 'renderer/pages/Browse';
 import Menu from 'renderer/components/Menu';
 
-const FallbackComponent = ({ error }: FallbackProps) => (
-  <div
-    style={{
-      height: '100vh',
-      width: '100vw',
-      display: 'flex',
-      justifyContent: 'center',
-    }}
-  >
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      <ExclamationCircleOutlined color="red" />
-      <Typography.Title>Oops! Something went wrong.</Typography.Title>
-      <Typography.Text>An error has occurred: {String(error)}</Typography.Text>
-    </div>
-  </div>
-);
-
-export default function App() {
+const FallbackComponent = ({ error }: FallbackProps) => {
   const {
     token: { colorBgContainer },
   } = theme.useToken();
 
   return (
+    <Layout.Content
+      style={{
+        padding: 24,
+        background: colorBgContainer,
+        overflow: 'auto',
+      }}
+    >
+      <Result
+        status="error"
+        title="Whoops! An error occurred"
+        subTitle={String(error)}
+        extra={
+          <Button
+            type="primary"
+            key="refresh"
+            onClick={() => window.location.reload()}
+          >
+            Refresh
+          </Button>
+        }
+      />
+    </Layout.Content>
+  );
+};
+export default function App() {
+  const prefersDarkMode = useMediaQuery({
+    query: '(prefers-color-scheme: dark)',
+  });
+
+  return (
     <Router>
-      <ConfigProvider locale={enUS}>
-        <ErrorBoundary
-          FallbackComponent={FallbackComponent}
-          onError={handleError}
-        >
-          <Layout style={{ height: '100vh' }}>
+      <ConfigProvider
+        theme={{
+          algorithm: prefersDarkMode
+            ? theme.darkAlgorithm
+            : theme.defaultAlgorithm,
+        }}
+        locale={enUS}
+      >
+        <Layout style={{ height: '100vh' }}>
+          <ErrorBoundary
+            FallbackComponent={FallbackComponent}
+            onError={handleError}
+          >
             <Layout.Sider>
               <Menu />
             </Layout.Sider>
             <Layout>
               {/* <Layout.Header>Header</Layout.Header> */}
-              <Layout.Content
-                style={{
-                  padding: 24,
-                  background: colorBgContainer,
-                  overflow: 'auto',
-                }}
-              >
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/browse" element={<Browse />} />
-                </Routes>
-              </Layout.Content>
+              {React.createElement(() => {
+                const {
+                  token: { colorBgContainer },
+                } = theme.useToken();
+
+                return (
+                  <Layout.Content
+                    style={{
+                      padding: 24,
+                      background: colorBgContainer,
+                      overflow: 'auto',
+                    }}
+                  >
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/browse" element={<Browse />} />
+                    </Routes>
+                  </Layout.Content>
+                );
+              })}
               {/* <PropertySider /> */}
               {/* <Layout.Footer>Footer</Layout.Footer> */}
             </Layout>
-          </Layout>
-        </ErrorBoundary>
+          </ErrorBoundary>
+        </Layout>
       </ConfigProvider>
     </Router>
   );
