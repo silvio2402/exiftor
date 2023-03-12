@@ -14,15 +14,22 @@ export function resolveHtmlPath(htmlFileName: string) {
 }
 
 export async function readImage(imgPath: string, thumbnail: boolean) {
-  let img = sharp(imgPath, { sequentialRead: true }).webp({
-    nearLossless: !thumbnail,
-  });
+  const imgConversionSettings = thumbnail
+    ? s.settings.image.thumbnail
+    : s.settings.image.preview;
+  let img = sharp(imgPath, { sequentialRead: true }).webp(
+    imgConversionSettings.webpOptions
+  );
   const resizeOptions: sharp.ResizeOptions = {
     withoutEnlargement: true,
     fit: 'inside',
     background: { r: 0, g: 0, b: 0, alpha: 0 },
   };
-  if (thumbnail) img = img.resize(256, 256, resizeOptions);
-  else img = img.resize(1200, 800, resizeOptions);
+  if (!imgConversionSettings.disableResize && imgConversionSettings.resolution)
+    img = img.resize(
+      imgConversionSettings.resolution.width,
+      imgConversionSettings.resolution.height,
+      resizeOptions
+    );
   return img.toBuffer();
 }

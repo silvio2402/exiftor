@@ -14,6 +14,9 @@ import fs from 'fs';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import { settingsObjectSchema } from '../common/settings-types';
+import Settings from './settings';
+import { defaultSettings, migrationFuncs } from './settings-definitions';
 import MenuBuilder from './menu';
 import { resolveHtmlPath, readImage } from './util';
 import type {
@@ -173,7 +176,13 @@ app.on('window-all-closed', () => {
 
 app
   .whenReady()
-  .then(() => {
+  .then(async () => {
+    const settings = new Settings(
+      defaultSettings,
+      settingsObjectSchema,
+      migrationFuncs
+    );
+    globalThis.s = await settings.getRef();
     createWindow();
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
