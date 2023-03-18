@@ -3,6 +3,15 @@
   cursor: pointer;
 }
 
+.statusContainer {
+  display: flex;
+  height: 100%;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
 .gridContainer {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

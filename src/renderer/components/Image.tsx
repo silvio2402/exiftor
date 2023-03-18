@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Image as AntDImage, ImageProps as AntDImageProps } from 'antd';
-import type { ReadImgArgs } from 'common/ipc-types';
-import handleError from 'renderer/errorhandling';
+import { trpc } from '../trpc';
 
 interface ImageProps extends AntDImageProps {
   imgPath: string;
@@ -15,90 +14,38 @@ const Image = (props: ImageProps) => {
     initialThumbnail || false
   );
 
-  const [thumbSrc, setThumbSrc] = useState<string | undefined>(undefined);
-  const [fullSrc, setFullSrc] = useState<string | undefined>(undefined);
+  const [imgSrc, setImgSrc] = useState<string | undefined>();
+
+  // TODO: Only enable query when image is in view (https://bobbyhadz.com/blog/react-check-if-element-in-viewport)
+  const { data: imgData } = trpc.readImg.useQuery({
+    path: imgPath,
+    thumbnail,
+  });
 
   useEffect(() => {
-    const currImgSrc = new Promise<string | null>((resolve, reject) => {
-      if (!thumbnail) {
-        resolve(null);
-      }
-      const { ipcRenderer } = window.electron;
-      const args: ReadImgArgs = {
-        path: imgPath,
-        thumbnail: true,
-      };
-      ipcRenderer
-        .invoke('read-img', args)
-        .then((result) => {
-          const { imgBuffer } = result;
-          const imgBlob = new Blob([imgBuffer], { type: 'image/webp' });
-          const newImgSrc = URL.createObjectURL(imgBlob);
-          setThumbSrc(newImgSrc);
-          resolve(newImgSrc);
-          return null;
-        })
-        .catch((err) => {
-          handleError(err);
-          setThumbSrc(undefined);
-          reject(err instanceof Error ? err.message : undefined);
-        });
-    });
+    let newImgSrc: string | undefined;
+    if (imgData?.imgBuffer) {
+      const { imgBuffer } = imgData;
+      const imgBlob = new Blob([imgBuffer], { type: 'image/webp' });
+      newImgSrc = URL.createObjectURL(imgBlob);
+    }
+    setImgSrc(newImgSrc);
 
     return () => {
-      currImgSrc
-        .then(
-          (revokeImgSrc) => revokeImgSrc && URL.revokeObjectURL(revokeImgSrc)
-        )
-        .catch(handleError);
+      if (newImgSrc) URL.revokeObjectURL(newImgSrc);
     };
-  }, [imgPath, thumbnail]);
-
-  useEffect(() => {
-    const currImgSrc = new Promise<string | null>((resolve, reject) => {
-      if (thumbnail) {
-        resolve(null);
-      }
-      const { ipcRenderer } = window.electron;
-      const args: ReadImgArgs = {
-        path: imgPath,
-        thumbnail: thumbnail || false,
-      };
-      ipcRenderer
-        .invoke('read-img', args)
-        .then((result) => {
-          const { imgBuffer } = result;
-          const imgBlob = new Blob([imgBuffer], { type: 'image/webp' });
-          const newImgSrc = URL.createObjectURL(imgBlob);
-          setFullSrc(newImgSrc);
-          resolve(newImgSrc);
-          return null;
-        })
-        .catch((err) => {
-          handleError(err);
-          reject(err instanceof Error ? err.message : undefined);
-        });
-    });
-
-    return () => {
-      currImgSrc
-        .then(
-          (revokeImgSrc) => revokeImgSrc && URL.revokeObjectURL(revokeImgSrc)
-        )
-        .catch(handleError);
-    };
-  }, [imgPath, thumbnail]);
+  }, [imgData, thumbnail]);
 
   return (
     <AntDImage
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...restProps}
-      src={thumbSrc}
+      src={imgSrc}
       preview={{
         onVisibleChange(isVisible) {
           if (isVisible) setThumbnail(false);
         },
-        src: fullSrc,
+        src: imgSrc,
       }}
     />
   );

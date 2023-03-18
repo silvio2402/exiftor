@@ -9,22 +9,16 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { homedir } from 'os';
-import fs from 'fs';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import { createIPCHandler } from 'electron-trpc/main';
+import { appRouter } from './api';
 import { settingsObjectSchema } from '../common/settings-types';
 import Settings from './settings';
 import { defaultSettings, migrationFuncs } from './settings-definitions';
 import MenuBuilder from './menu';
-import { resolveHtmlPath, readImage } from './util';
-import type {
-  ReadDirArgs,
-  ReadDirResult,
-  ReadImgArgs,
-  ReadImgResult,
-} from '../common/ipc-types';
+import { resolveHtmlPath } from './util';
 
 class AppUpdater {
   constructor() {
@@ -35,51 +29,6 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-
-ipcMain.handle('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  return msgTemplate('pong');
-});
-
-ipcMain.handle('read-dir', async (event, arg: ReadDirArgs) => {
-  let { path: dirPath } = arg;
-  const { excludeFiles } = arg;
-  dirPath = dirPath.replace('%HOME%', homedir());
-  const files = fs.readdirSync(dirPath, { withFileTypes: true });
-  let msgEntries: ReadDirResult['entries'] = [];
-  msgEntries = files.flatMap((file) => {
-    const isDirectory = file.isDirectory();
-    const isFile = file.isFile();
-    const isSymbolicLink = file.isSymbolicLink();
-    return isDirectory || isFile || isSymbolicLink
-      ? {
-          name: file.name,
-          isDirectory,
-          isFile,
-          isSymbolicLink,
-        }
-      : [];
-  });
-  if (excludeFiles) {
-    msgEntries = msgEntries.filter((entry) => !entry.isFile);
-  }
-  const msg: ReadDirResult = {
-    entries: msgEntries,
-  };
-  return msg;
-});
-
-ipcMain.handle('read-img', async (event, arg: ReadImgArgs) => {
-  let { path: imgPath } = arg;
-  const { thumbnail } = arg;
-  imgPath = imgPath.replace('%HOME%', homedir());
-  const imgBuffer = await readImage(imgPath, thumbnail);
-  const msg: ReadImgResult = {
-    imgBuffer,
-  };
-  return msg;
-});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -130,6 +79,8 @@ const createWindow = async () => {
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
   });
+
+  createIPCHandler({ router: appRouter, windows: [mainWindow] });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 
@@ -183,7 +134,9 @@ app
       migrationFuncs
     );
     globalThis.s = await settings.getRef();
+
     createWindow();
+
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
