@@ -178,6 +178,7 @@
     "lint-staged": "^13.0.3",
     "memfs": "^3.4.13",
     "mini-css-extract-plugin": "^2.6.1",
+    "node-abi": "^3.33.0",
     "postcss-loader": "^7.0.2",
     "prettier": "^2.7.1",
     "react-refresh": "^0.14.0",

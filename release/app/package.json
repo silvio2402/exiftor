@@ -15,6 +15,7 @@
     "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
   },
   "dependencies": {
+    "electron-trpc": "^0.4.2",
     "sharp": "^0.31.3"
   }
 }
