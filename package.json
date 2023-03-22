@@ -43,7 +43,7 @@
     "test": "npm run test:node && npm run test:jsdom && npm run test:playwright",
     "test:node": "cross-env APP_ENV=test jest --config=testconfigs/jest.node.config.ts",
     "test:jsdom": "cross-env APP_ENV=test jest --config=testconfigs/jest.jsdom.config.ts",
-    "test:playwright": "cross-env APP_ENV=test DEBUG=pw:browser* playwright test --config=testconfigs/playwright.config.ts"
+    "test:playwright": "cross-env APP_ENV=test playwright test --config=testconfigs/playwright.config.ts"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
