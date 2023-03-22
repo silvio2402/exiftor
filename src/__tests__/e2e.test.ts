@@ -4,7 +4,7 @@ import path from 'path';
 
 const { describe, beforeAll, afterAll } = test;
 
-describe('Main', () => {
+describe('App', () => {
   let electronApp: ElectronApplication;
 
   beforeAll(async () => {
@@ -24,18 +24,18 @@ describe('Main', () => {
     // eslint-disable-next-line no-console
     window.on('pageerror', console.error);
   });
+  afterAll(async () => {
+    await electronApp.close();
+  });
 
   test('opens window', async () => {
     const window = await electronApp.firstWindow();
     expect(window).toBeDefined();
   });
+
   test('has correct title', async () => {
     const window = await electronApp.firstWindow();
     await window.waitForLoadState('domcontentloaded');
     expect(await window.title()).toBe('ExifTor');
-  });
-
-  afterAll(async () => {
-    await electronApp.close();
   });
 });

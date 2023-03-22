@@ -38,8 +38,6 @@ export default class Settings<SettingsObject extends SettingsWithVersion> {
     this.settingsSchema = settingsSchema;
     this.migrationFuncs = migrationFuncs;
     this.config = { ...defaultConfig, ...config };
-
-    this.update();
   }
 
   private getSettingsFilePath() {
@@ -105,7 +103,7 @@ export default class Settings<SettingsObject extends SettingsWithVersion> {
     return typed;
   }
 
-  async update() {
+  async init() {
     const currentVersion = app.getVersion();
     const currentSettings = await this.loadSettings();
     const settingsVersion = currentSettings.version;
@@ -168,11 +166,11 @@ export default class Settings<SettingsObject extends SettingsWithVersion> {
     } catch {
       // eslint-disable-next-line no-console
       console.warn('Settings are invalid, resetting to default');
-      this.reset();
+      await this.reset();
       return;
     }
 
-    this.saveSettings(typedNewSettings);
+    await this.saveSettings(typedNewSettings);
   }
 
   /*
@@ -224,7 +222,7 @@ export default class Settings<SettingsObject extends SettingsWithVersion> {
 
   async getRef(): Promise<{ settings: SettingsObject }> {
     const settings = await this.loadSettingsObject();
-    const setter = (newValue: SettingsObject) => {
+    const setter = async (newValue: SettingsObject) => {
       let typed: SettingsObject;
       try {
         typed = this.settingsSchema.parse(newValue);
@@ -233,7 +231,7 @@ export default class Settings<SettingsObject extends SettingsWithVersion> {
         console.warn('Settings are invalid, not saving');
         return;
       }
-      this.saveSettings(typed);
+      await this.saveSettings(typed);
     };
 
     const refSettings = Object.defineProperty({ settings }, 'settings', {
@@ -248,7 +246,7 @@ export default class Settings<SettingsObject extends SettingsWithVersion> {
     return refSettings;
   }
 
-  reset() {
-    this.saveSettings(this.defaultSettings);
+  async reset() {
+    await this.saveSettings(this.defaultSettings);
   }
 }

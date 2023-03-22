@@ -1,10 +1,9 @@
 /* eslint-disable global-require */
-import '@testing-library/jest-dom';
 import { vol } from 'memfs';
 import path from 'path';
-// import { _electron as electron } from '@playwright/test';
 import { z } from 'zod';
 import { SettingsWithVersion, MigrationFunctions } from 'common/settings-types';
+import SettingsType from 'main/settings';
 
 describe('Settings', () => {
   beforeAll(() => {
@@ -16,6 +15,9 @@ describe('Settings', () => {
   beforeEach(() => {
     jest.resetModules();
     vol.reset();
+  });
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be able to create an instance', async () => {
@@ -42,10 +44,15 @@ describe('Settings', () => {
 
     const Settings = require('main/settings').default;
 
-    const settings = new Settings(testSettings, settingsSchema, {
-      dir: __dirname,
-      fileName: 'settings.json',
-    });
+    const settings: SettingsType<SettingsWithVersion> = new Settings(
+      testSettings,
+      settingsSchema,
+      {
+        dir: __dirname,
+        fileName: 'settings.json',
+      }
+    );
+    await settings.init();
 
     const settingsData = await vol.promises.readFile(
       path.join(__dirname, 'temp', 'settings.json'),
@@ -99,7 +106,7 @@ describe('Settings', () => {
 
     const Settings = require('main/settings').default;
 
-    const settings = new Settings(
+    const settings: SettingsType<SettingsWithVersion> = new Settings(
       testSettings,
       settingsSchema,
       migrationFuncs,
@@ -107,6 +114,7 @@ describe('Settings', () => {
         atomicSave: false,
       }
     );
+    await settings.init();
 
     const settingsData = await vol.promises.readFile(
       path.join(__dirname, 'temp', 'settings.json'),
@@ -170,7 +178,7 @@ describe('Settings', () => {
 
     const Settings = require('main/settings').default;
 
-    const settings = new Settings(
+    const settings: SettingsType<SettingsWithVersion> = new Settings(
       testSettings,
       settingsSchema,
       migrationFuncs,
@@ -178,6 +186,7 @@ describe('Settings', () => {
         atomicSave: false,
       }
     );
+    await settings.init();
 
     const settingsData = await vol.promises.readFile(
       path.join(__dirname, 'temp', 'settings.json'),
@@ -233,7 +242,7 @@ describe('Settings', () => {
 
     const Settings = require('main/settings').default;
 
-    const settings = new Settings(
+    const settings: SettingsType<SettingsWithVersion> = new Settings(
       testSettings,
       settingsSchema,
       migrationFuncs,
@@ -241,6 +250,7 @@ describe('Settings', () => {
         atomicSave: false,
       }
     );
+    await settings.init();
 
     const settingsData = await vol.promises.readFile(
       path.join(__dirname, 'temp', 'settings.json'),
@@ -304,7 +314,7 @@ describe('Settings', () => {
 
     const Settings = require('main/settings').default;
 
-    const settings = new Settings(
+    const settings: SettingsType<SettingsWithVersion> = new Settings(
       testSettings,
       settingsSchema,
       migrationFuncs,
@@ -312,6 +322,7 @@ describe('Settings', () => {
         atomicSave: false,
       }
     );
+    await settings.init();
 
     const settingsData = await vol.promises.readFile(
       path.join(__dirname, 'temp', 'settings.json'),
@@ -329,8 +340,4 @@ describe('Settings', () => {
   });
 
   // TODO: Test multiple migrations
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
 });

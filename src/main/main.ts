@@ -135,6 +135,7 @@ app
       settingsObjectSchema,
       migrationFuncs
     );
+    await settings.init();
     globalThis.s = await settings.getRef();
 
     createWindow();
