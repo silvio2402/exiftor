@@ -24,7 +24,7 @@ jobs:
         run: |
           npm install
 
-      - name: npm test
+      - name: pretest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEBUG: pw:browser*
@@ -32,4 +32,12 @@ jobs:
           npm run package
           npm run lint
           npm exec tsc
-          npm test
+
+      - name: npm test
+        run: npm test
+        if: matrix.os != 'ubuntu-latest'
+
+      # xvfb-run is required to run playwright on Ubuntu
+      - name: npm test (Ubuntu)
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm test
+        if: matrix.os == 'ubuntu-latest'
