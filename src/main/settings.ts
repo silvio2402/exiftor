@@ -45,10 +45,17 @@ export default class Settings<SettingsObject extends SettingsWithVersion> {
     return path.join(dir, this.config.fileName);
   }
 
-  private ensureSettingsDir() {
+  private async ensureSettingsDir() {
     const dir = this.config.dir || app.getPath('userData');
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
+    }
+  }
+
+  private async ensureSettingsFile() {
+    const filePath = this.getSettingsFilePath();
+    if (!fs.existsSync(filePath)) {
+      await this.reset();
     }
   }
 
@@ -62,7 +69,7 @@ export default class Settings<SettingsObject extends SettingsWithVersion> {
       return;
     }
     const { atomicSave, numSpaces, prettify } = this.config;
-    this.ensureSettingsDir();
+    await this.ensureSettingsDir();
     const filePath = this.getSettingsFilePath();
     const json = JSON.stringify(typed, null, prettify ? numSpaces : 0);
     if (atomicSave) {
@@ -73,7 +80,8 @@ export default class Settings<SettingsObject extends SettingsWithVersion> {
   }
 
   private async loadSettings(): Promise<SettingsWithVersion> {
-    this.ensureSettingsDir();
+    await this.ensureSettingsDir();
+    await this.ensureSettingsFile();
     const filePath = this.getSettingsFilePath();
     const data = fs.readFileSync(filePath, 'utf8');
     const parsed = JSON.parse(data);
