@@ -1,7 +1,9 @@
 /* eslint import/prefer-default-export: off */
 import { URL } from 'url';
 import path from 'path';
+import { ExifTool } from 'exiftool-vendored';
 import sharp from 'sharp';
+import { TagsSchema, Tags, WriteTags } from '../common/exif-types';
 
 export function resolveHtmlPath(htmlFileName: string) {
   if (process.env.NODE_ENV === 'development') {
@@ -32,4 +34,28 @@ export async function readImage(imgPath: string, thumbnail: boolean) {
       resizeOptions
     );
   return img.toBuffer();
+}
+
+export async function ensureExifTool() {
+  if (!(globalThis.exiftool === undefined || globalThis.exiftool.ended)) return;
+  const newExiftool = new ExifTool({
+    exiftoolArgs: ['-stay_open'],
+    maxProcs: s.settings.exiftool.maxProcs,
+    minDelayBetweenSpawnMillis: 500,
+  });
+  const newExiftoolVersion = await newExiftool.version();
+  // eslint-disable-next-line no-console
+  console.log(`ExifTool version: ${newExiftoolVersion}`);
+  globalThis.exiftool = newExiftool;
+}
+
+export async function readExif(filePath: string): Promise<Tags> {
+  await ensureExifTool();
+  const data = exiftool.readRaw(filePath);
+  return TagsSchema.parse(data);
+}
+
+export async function writeExif(filePath: string, tags: WriteTags) {
+  await ensureExifTool();
+  return exiftool.write(filePath, tags);
 }

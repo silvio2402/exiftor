@@ -99,7 +99,6 @@ export default function App() {
                       </Layout.Content>
                     );
                   })}
-                  {/* <PropertySider /> */}
                   {/* <Layout.Footer>Footer</Layout.Footer> */}
                 </Layout>
               </ErrorBoundary>

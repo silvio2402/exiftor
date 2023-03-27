@@ -1,6 +1,5 @@
 import { Typography } from 'antd';
 import indexStyles from './index.module.scss';
-// import Image from '../components/Image';
 
 const Home = () => {
   return (

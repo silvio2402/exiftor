@@ -2,13 +2,15 @@ import { homedir } from 'os';
 import fs from 'fs';
 import { z } from 'zod';
 import { initTRPC } from '@trpc/server';
+import { WriteTagsSchema } from '../common/exif-types';
 import superjson from '../common/superjson';
-import { readImage } from './util';
+import { readImage, readExif, writeExif } from './util';
 
 const t = initTRPC.create({ isServer: true, transformer: superjson });
 
 const { router, procedure: publicProcedure } = t;
 
+// Make sure to invalidate stuff when creating new endpoints that depend on the same data
 export const appRouter = router({
   readDir: publicProcedure
     .input(z.object({ path: z.string(), excludeFiles: z.boolean().optional() }))
@@ -48,6 +50,18 @@ export const appRouter = router({
       return {
         imgBuffer,
       } as const;
+    }),
+  readExif: publicProcedure.input(z.object({ path: z.string() })).query(
+    async ({ input }) =>
+      ({
+        tags: await readExif(input.path),
+      } as const)
+  ),
+  writeExif: publicProcedure
+    .input(z.object({ path: z.string(), tags: WriteTagsSchema }))
+    .mutation(async ({ input }) => {
+      const { path: filePath, tags } = input;
+      return writeExif(filePath, tags);
     }),
 });
 

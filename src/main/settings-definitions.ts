@@ -23,6 +23,9 @@ export const defaultSettings: SettingsObject = {
       },
     },
   },
+  exiftool: {
+    maxProcs: 2,
+  },
 };
 
 export const migrationFuncs: MigrationFunctions = {

@@ -18,7 +18,7 @@ import { settingsObjectSchema } from '../common/settings-types';
 import Settings from './settings';
 import { defaultSettings, migrationFuncs } from './settings-definitions';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
+import { resolveHtmlPath, ensureExifTool } from './util';
 
 class AppUpdater {
   constructor() {
@@ -125,6 +125,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+
+  // Close exiftool
+  exiftool.end();
 });
 
 app
@@ -137,6 +140,8 @@ app
     );
     await settings.init();
     globalThis.s = await settings.getRef();
+
+    ensureExifTool();
 
     createWindow();
 

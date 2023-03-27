@@ -79,5 +79,8 @@ export const settingsObjectSchema = settingsWithVersionSchema.extend({
     thumbnail: imageConversionSettingsSchema,
     preview: imageConversionSettingsSchema,
   }),
+  exiftool: z.object({
+    maxProcs: z.number(),
+  }),
 });
 export type SettingsObject = z.infer<typeof settingsObjectSchema>;
