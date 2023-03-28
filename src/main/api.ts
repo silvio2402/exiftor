@@ -1,10 +1,9 @@
-import { homedir } from 'os';
 import fs from 'fs';
 import { z } from 'zod';
 import { initTRPC } from '@trpc/server';
 import { WriteTagsSchema } from '../common/exif-types';
 import superjson from '../common/superjson';
-import { readImage, readExif, writeExif } from './util';
+import { readImage, readExif, writeExif, expandPath } from './util';
 
 const t = initTRPC.create({ isServer: true, transformer: superjson });
 
@@ -17,7 +16,7 @@ export const appRouter = router({
     .query(async ({ input }) => {
       let { path: dirPath } = input;
       const { excludeFiles } = input;
-      dirPath = dirPath.replace('%HOME%', homedir());
+      dirPath = expandPath(dirPath);
       const files = fs.readdirSync(dirPath, { withFileTypes: true });
       let msgEntries = [];
       msgEntries = files.flatMap((file) => {
@@ -45,22 +44,28 @@ export const appRouter = router({
     .query(async ({ input }) => {
       let { path: imgPath } = input;
       const { thumbnail } = input;
-      imgPath = imgPath.replace('%HOME%', homedir());
+      imgPath = expandPath(imgPath);
       const imgBuffer = await readImage(imgPath, thumbnail);
       return {
         imgBuffer,
       } as const;
     }),
-  readExif: publicProcedure.input(z.object({ path: z.string() })).query(
-    async ({ input }) =>
-      ({
-        tags: await readExif(input.path),
-      } as const)
-  ),
+  readExif: publicProcedure
+    .input(z.object({ path: z.string() }))
+    .query(async ({ input }) => {
+      let { path: filePath } = input;
+      filePath = expandPath(filePath);
+      const tags = await readExif(filePath);
+      return {
+        tags,
+      } as const;
+    }),
   writeExif: publicProcedure
     .input(z.object({ path: z.string(), tags: WriteTagsSchema }))
     .mutation(async ({ input }) => {
-      const { path: filePath, tags } = input;
+      const { tags } = input;
+      let { path: filePath } = input;
+      filePath = expandPath(filePath);
       return writeExif(filePath, tags);
     }),
 });

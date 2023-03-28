@@ -1,4 +1,5 @@
 /* eslint import/prefer-default-export: off */
+import { app } from 'electron';
 import { URL } from 'url';
 import path from 'path';
 import { ExifTool } from 'exiftool-vendored';
@@ -13,6 +14,13 @@ export function resolveHtmlPath(htmlFileName: string) {
     return url.href;
   }
   return `file://${path.resolve(__dirname, '../renderer/', htmlFileName)}`;
+}
+
+export function expandPath(pathToExpand: string) {
+  let outputPath = pathToExpand;
+  outputPath = outputPath.replace('~', app.getPath('home'));
+  outputPath = path.normalize(outputPath);
+  return outputPath;
 }
 
 export async function readImage(imgPath: string, thumbnail: boolean) {
