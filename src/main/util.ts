@@ -39,7 +39,7 @@ export async function readImage(imgPath: string, thumbnail: boolean) {
 export async function ensureExifTool() {
   if (!(globalThis.exiftool === undefined || globalThis.exiftool.ended)) return;
   const newExiftool = new ExifTool({
-    exiftoolArgs: ['-stay_open'],
+    exiftoolArgs: ['-stay_open', 'True', '-@', '-'],
     maxProcs: s.settings.exiftool.maxProcs,
     minDelayBetweenSpawnMillis: 500,
   });
