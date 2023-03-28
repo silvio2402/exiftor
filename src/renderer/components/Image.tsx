@@ -37,6 +37,7 @@ const Image = (props: ImageProps) => {
   }, [imgData, thumbnail]);
 
   return (
+    // TODO: Add loading indicator (e.g. remake the image component)
     <AntDImage
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...restProps}
