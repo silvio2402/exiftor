@@ -1,4 +1,4 @@
-import { Tags, WriteTags } from 'common/exif-types';
+import { RawTags } from 'exiftool-vendored';
 import { trpc } from './trpc';
 
 export function useExif(query: Parameters<typeof trpc.readExif.useQuery>['0']) {
@@ -13,7 +13,7 @@ export function useExif(query: Parameters<typeof trpc.readExif.useQuery>['0']) {
       utils.readImg.invalidate({ path: input.path });
     },
   });
-  const setTags = (newTags: WriteTags) =>
+  const setTags = (newTags: RawTags) =>
     exifMutation.mutate({ path: filePath, tags: newTags });
 
   return [tags, setTags] as const;
@@ -21,7 +21,7 @@ export function useExif(query: Parameters<typeof trpc.readExif.useQuery>['0']) {
 
 export function useExifs(
   queries: Parameters<typeof trpc.readExif.useQuery>['0'][]
-): [(Tags | undefined)[], (index: number, newTags: WriteTags) => void] {
+): [(RawTags | undefined)[], (index: number, newTags: RawTags) => void] {
   const queryResults = trpc.useQueries((t) =>
     queries.map((query) => t.readExif(query))
   );
@@ -33,7 +33,7 @@ export function useExifs(
       utils.readImg.invalidate({ path: input.path });
     },
   });
-  const setTags = (index: number, newTags: WriteTags) =>
+  const setTags = (index: number, newTags: RawTags) =>
     exifMutation.mutate({ path: queries[index].path, tags: newTags });
 
   const tagsArr = queryResults.map((qr) => qr.data?.tags);

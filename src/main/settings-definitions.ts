@@ -3,6 +3,9 @@ import { SettingsObject, MigrationFunctions } from '../common/settings-types';
 
 export const defaultSettings: SettingsObject = {
   version: app.getVersion(),
+  app: {
+    defaultDir: app.getPath('pictures'),
+  },
   image: {
     thumbnail: {
       disableResize: false,

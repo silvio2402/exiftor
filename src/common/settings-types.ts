@@ -1,13 +1,6 @@
 import { z } from 'zod';
 import type { WebpOptions } from 'sharp';
-
-const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
-type Literal = z.infer<typeof literalSchema>;
-type Json = Literal | { [key: string]: Json } | Json[];
-const jsonSchema: z.ZodType<Json> = z.lazy(() =>
-  z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)])
-);
-// type AnyJson = z.infer<typeof jsonSchema>;
+import { literalSchema, jsonSchema } from './json-types';
 
 export const deepSettingsObjectSchema = z.union([
   z.array(jsonSchema),
@@ -75,6 +68,9 @@ export type ImageConversionSettings = z.infer<
 >;
 
 export const settingsObjectSchema = settingsWithVersionSchema.extend({
+  app: z.object({
+    defaultDir: z.string(),
+  }),
   image: z.object({
     thumbnail: imageConversionSettingsSchema,
     preview: imageConversionSettingsSchema,

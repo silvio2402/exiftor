@@ -45,7 +45,7 @@ if (isDebug) {
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
+  const extensions: string[] = []; // ['REACT_DEVELOPER_TOOLS'];
 
   return installer
     .default(
@@ -133,7 +133,7 @@ app.on('window-all-closed', () => {
 app
   .whenReady()
   .then(async () => {
-    const settings = new Settings(
+    globalThis.settings = new Settings(
       defaultSettings,
       settingsObjectSchema,
       migrationFuncs
@@ -141,7 +141,7 @@ app
     await settings.init();
     globalThis.s = await settings.getRef();
 
-    ensureExifTool();
+    await ensureExifTool();
 
     createWindow();
 

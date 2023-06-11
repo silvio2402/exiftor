@@ -1,0 +1,12 @@
+.ant-pro {
+  height: 100%;
+}
+
+.table {
+  height: 100%;
+
+  & > .ant-pro-card {
+    height: 100%;
+    border-radius: 0;
+  }
+}

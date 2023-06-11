@@ -1,6 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu as AntdMenu } from 'antd';
-import { HomeOutlined, FileImageOutlined } from '@ant-design/icons';
+import {
+  HomeOutlined,
+  FileImageOutlined,
+  SettingOutlined,
+} from '@ant-design/icons';
 import React from 'react';
 
 const Menu = () => {
@@ -9,7 +13,8 @@ const Menu = () => {
 
   return (
     <AntdMenu
-      style={{ height: '100%' }}
+      style={{ width: '100%' }}
+      mode="horizontal"
       items={[
         {
           key: '/',
@@ -20,6 +25,11 @@ const Menu = () => {
           key: '/browse',
           icon: <FileImageOutlined />,
           label: 'Browse',
+        },
+        {
+          key: '/settings',
+          icon: <SettingOutlined />,
+          label: 'Settings',
         },
       ]}
       selectedKeys={[location.pathname]}

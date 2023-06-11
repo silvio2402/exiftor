@@ -2,9 +2,8 @@
 import { app } from 'electron';
 import { URL } from 'url';
 import path from 'path';
-import { ExifTool } from 'exiftool-vendored';
 import sharp from 'sharp';
-import { TagsSchema, Tags, WriteTags } from '../common/exif-types';
+import { ExifTool, RawTags } from 'exiftool-vendored';
 
 export function resolveHtmlPath(htmlFileName: string) {
   if (process.env.NODE_ENV === 'development') {
@@ -51,19 +50,27 @@ export async function ensureExifTool() {
     maxProcs: s.settings.exiftool.maxProcs,
     minDelayBetweenSpawnMillis: 500,
   });
-  const newExiftoolVersion = await newExiftool.version();
-  // eslint-disable-next-line no-console
-  console.log(`ExifTool version: ${newExiftoolVersion}`);
+  newExiftool
+    .version()
+    .then((exiftoolVersion) =>
+      // eslint-disable-next-line no-console
+      console.log(`ExifTool version: ${exiftoolVersion}`)
+    )
+    // eslint-disable-next-line no-console
+    .catch(console.error);
+
   globalThis.exiftool = newExiftool;
 }
 
-export async function readExif(filePath: string): Promise<Tags> {
+export async function readExif(filePath: string): Promise<RawTags> {
   await ensureExifTool();
-  const data = exiftool.readRaw(filePath);
-  return TagsSchema.parse(data);
+  const data = await exiftool.readRaw(filePath);
+  // eslint-disable-next-line no-console
+  console.log(data);
+  return data;
 }
 
-export async function writeExif(filePath: string, tags: WriteTags) {
+export async function writeExif(filePath: string, tags: RawTags) {
   await ensureExifTool();
   return exiftool.write(filePath, tags);
 }

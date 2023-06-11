@@ -9,6 +9,7 @@ import { ConfigProvider, Layout, Result, Button, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
 import Home from 'renderer/pages/Home';
 import Browse from 'renderer/pages/Browse';
+import Settings from 'renderer/pages/Settings';
 import Menu from 'renderer/components/Menu';
 import superjson from 'common/superjson';
 import { trpc } from './trpc';
@@ -44,7 +45,16 @@ const FallbackComponent = ({ error }: FallbackProps) => {
   );
 };
 export default function App() {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  );
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [ipcLink()],
@@ -74,33 +84,37 @@ export default function App() {
                 FallbackComponent={FallbackComponent}
                 onError={handleError}
               >
-                <Layout.Sider>
+                <Layout.Header
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    padding: 0,
+                  }}
+                >
                   <Menu />
-                </Layout.Sider>
-                <Layout>
-                  {/* <Layout.Header>Header</Layout.Header> */}
-                  {React.createElement(() => {
-                    const {
-                      token: { colorBgContainer },
-                    } = theme.useToken();
+                </Layout.Header>
+                {React.createElement(() => {
+                  const {
+                    token: { colorBgContainer },
+                  } = theme.useToken();
 
-                    return (
-                      <Layout.Content
-                        style={{
-                          padding: 24,
-                          background: colorBgContainer,
-                          overflow: 'auto',
-                        }}
-                      >
-                        <Routes>
-                          <Route path="/" element={<Home />} />
-                          <Route path="/browse" element={<Browse />} />
-                        </Routes>
-                      </Layout.Content>
-                    );
-                  })}
-                  {/* <Layout.Footer>Footer</Layout.Footer> */}
-                </Layout>
+                  return (
+                    <div
+                      style={{
+                        padding: 24,
+                        background: colorBgContainer,
+                        overflow: 'auto',
+                        flexGrow: 1,
+                      }}
+                    >
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/browse" element={<Browse />} />
+                        <Route path="/settings" element={<Settings />} />
+                      </Routes>
+                    </div>
+                  );
+                })}
               </ErrorBoundary>
             </Layout>
           </ConfigProvider>

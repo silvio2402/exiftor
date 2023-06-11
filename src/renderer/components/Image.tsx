@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Image as AntDImage, ImageProps as AntDImageProps } from 'antd';
 import { trpc } from '../trpc';
+import Styles from './Image.module.scss';
 
 interface ImageProps extends AntDImageProps {
   imgPath: string;
   thumbnail?: boolean;
+  selected?: boolean;
 }
 
 const Image = (props: ImageProps) => {
-  const { imgPath, thumbnail: initialThumbnail, ...restProps } = props;
+  const {
+    imgPath,
+    thumbnail: initialThumbnail,
+    selected,
+    ...restProps
+  } = props;
 
   const [thumbnail, setThumbnail] = useState<boolean>(
     initialThumbnail || false
@@ -36,24 +43,42 @@ const Image = (props: ImageProps) => {
     };
   }, [imgData, thumbnail]);
 
+  useEffect(() => {
+    if (typeof restProps.preview !== 'boolean' && restProps.preview?.visible) {
+      setThumbnail(false);
+    }
+  }, [restProps.preview]);
+
   return (
     // TODO: Add loading indicator (e.g. remake the image component)
     <AntDImage
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...restProps}
-      src={imgSrc}
-      preview={{
-        onVisibleChange(isVisible) {
-          if (isVisible) setThumbnail(false);
-        },
-        src: imgSrc,
+      style={{
+        // TODO: Adjust border color to theme
+        outlineColor: selected ? '#1890ff' : undefined,
       }}
+      className={[restProps.className, Styles.image].join(' ')}
+      src={imgSrc}
+      preview={
+        restProps.preview &&
+        typeof restProps.preview !== 'boolean' && {
+          onVisibleChange(isVisible, prevVisible) {
+            if (isVisible) setThumbnail(false);
+            if (typeof restProps.preview !== 'boolean')
+              restProps.preview?.onVisibleChange?.(isVisible, prevVisible);
+          },
+          visible: restProps.preview?.visible,
+          src: imgSrc,
+        }
+      }
     />
   );
 };
 
 Image.defaultProps = {
   thumbnail: false,
+  selected: true,
 };
 
 export default Image;

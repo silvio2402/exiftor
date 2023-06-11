@@ -1,9 +1,10 @@
 import fs from 'fs';
 import { z } from 'zod';
 import { initTRPC } from '@trpc/server';
-import { WriteTagsSchema } from '../common/exif-types';
+import { SettingsObject, settingsObjectSchema } from '../common/settings-types';
 import superjson from '../common/superjson';
 import { readImage, readExif, writeExif, expandPath } from './util';
+import { rawTagsSchema } from '../common/exif-types';
 
 const t = initTRPC.create({ isServer: true, transformer: superjson });
 
@@ -11,6 +12,16 @@ const { router, procedure: publicProcedure } = t;
 
 // Make sure to invalidate stuff when creating new endpoints that depend on the same data
 export const appRouter = router({
+  getSettings: publicProcedure.query(
+    async (): Promise<SettingsObject> => s.settings
+  ),
+  setSettings: publicProcedure
+    .input(z.object({ settings: settingsObjectSchema }))
+    .mutation(async ({ input }) => {
+      const { settings } = input;
+      s.settings = settings;
+    }),
+  resetSettings: publicProcedure.mutation(async () => settings.reset()),
   readDir: publicProcedure
     .input(z.object({ path: z.string(), excludeFiles: z.boolean().optional() }))
     .query(async ({ input }) => {
@@ -61,7 +72,12 @@ export const appRouter = router({
       } as const;
     }),
   writeExif: publicProcedure
-    .input(z.object({ path: z.string(), tags: WriteTagsSchema }))
+    .input(
+      z.object({
+        path: z.string(),
+        tags: rawTagsSchema,
+      })
+    )
     .mutation(async ({ input }) => {
       const { tags } = input;
       let { path: filePath } = input;

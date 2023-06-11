@@ -1,0 +1,7 @@
+.image {
+  -webkit-user-drag: none;
+  outline-offset: 1px;
+  border-radius: 2px;
+  outline: 3px solid transparent;
+  transition: outline 0.1s ease-in-out;
+}

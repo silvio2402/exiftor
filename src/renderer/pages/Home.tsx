@@ -4,10 +4,8 @@ import indexStyles from './index.module.scss';
 const Home = () => {
   return (
     <div className={indexStyles.wrapper}>
-      <Typography.Title>Home</Typography.Title>
-      <Typography.Paragraph>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-      </Typography.Paragraph>
+      <Typography.Title>Welcome to ExifTor!</Typography.Title>
+      <Typography.Paragraph>By Silvio</Typography.Paragraph>
     </div>
   );
 };
