@@ -12,9 +12,9 @@ const { router, procedure: publicProcedure } = t;
 
 // Make sure to invalidate stuff when creating new endpoints that depend on the same data
 export const appRouter = router({
-  getSettings: publicProcedure.query(
-    async (): Promise<SettingsObject> => s.settings
-  ),
+  getSettings: publicProcedure.query(async (): Promise<SettingsObject> => {
+    return s.settings;
+  }),
   setSettings: publicProcedure
     .input(z.object({ settings: settingsObjectSchema }))
     .mutation(async ({ input }) => {

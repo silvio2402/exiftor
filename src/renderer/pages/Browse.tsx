@@ -36,12 +36,25 @@ const Browse = () => {
     }
   }, [location, navigate]);
 
+  const settingsResult = trpc.getSettings.useQuery();
+
+  useEffect(() => {
+    if (settingsResult.status === 'success') {
+      navigate(location.pathname, {
+        state: settingsResult.data?.app.defaultDir,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsResult.status]);
+
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
   const [visiblePreview, setVisiblePreview] = useState<string | undefined>();
 
   // TODO: Use a better way to store the current location (e.g. Redux)
-  const currLocationState = location.state || `~${path.sep}`;
+  const currLocationState: string = location.state
+    ? String(location.state)
+    : `~${path.sep}`;
 
   const entriesResult = trpc.readDir.useQuery({
     path: currLocationState,

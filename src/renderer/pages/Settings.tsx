@@ -1,9 +1,13 @@
-import React, { useState, useMemo } from 'react';
+/* eslint-disable react/jsx-props-no-spreading */
+import React, { useState, useMemo, useEffect } from 'react';
 import { z } from 'zod';
-import { Form, Typography, AutoComplete, Button, Spin } from 'antd';
+import { Typography, AutoComplete, Button, Spin, Checkbox, Input } from 'antd';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import path from 'path-browserify';
 import { trpc } from 'renderer/trpc';
 import StringSimilarity from 'string-similarity';
+import { SettingsObject } from 'common/settings-types';
 import indexStyles from './index.module.scss';
 
 const useDirectoryAutoComplete = (): [
@@ -19,7 +23,11 @@ const useDirectoryAutoComplete = (): [
   );
 
   const onSearch = async (text: string) => {
-    const splitText = text.split(path.sep);
+    const splitText = text
+      .split(path.sep)
+      .flatMap((part) => part.split('/'))
+      .flatMap((part) => part.split('\\\\'))
+      .flatMap((part) => part.split('\\'));
     const pathToSearch = splitText.slice(0, -1).join(path.sep);
     const beganText = splitText[splitText.length - 1];
 
@@ -78,149 +86,114 @@ const validateDirectory = async (
   });
 };
 
-type FormFieldTypes = {
-  string: string;
-  number: number;
-  directory: string;
-  boolean: boolean;
-};
+const formValuesSchema = z.object({
+  defaultDir: z.string(),
+  disablePreviewCompression: z.boolean(),
+});
+type FormValues = z.infer<typeof formValuesSchema>;
 
-type FormFieldValueType = {
-  default_dir: 'directory';
-  disable_preview_compression: 'boolean';
-};
-
-type FormField<Key extends keyof FormFieldValueType> = {
-  key: Key;
-  label: string;
-  type: FormFieldValueType[Key];
-  placeholder?: string;
-  ref: string[];
-};
-
-type FormSchema = Array<FormField<keyof FormFieldValueType>>;
-
-type FormValueSchema = {
-  [Key in keyof FormFieldValueType]: FormFieldTypes[FormFieldValueType[Key]];
-};
-
-// const formSchemaSchema: z.ZodSchema<FormSchema> = z.array(
-//   z.object({
-//     key: z.string(),
-//     label: z.string(),
-//     type: z.union([
-//       z.literal('string'),
-//       z.literal('number'),
-//       z.literal('directory'),
-//       z.literal('boolean'),
-//     ]),
-//     placeholder: z.string().optional(),
-//     ref: z.array(z.string()),
-//   })
-// );
-
-const settingsFormSchema: FormSchema = [
-  {
-    key: 'default_dir',
-    label: 'Default directory',
-    placeholder: '~/',
-    type: 'directory',
-    ref: ['app', 'defaultDir'],
-  },
-];
+function zodEnumFromObjKeys<K extends string>(
+  obj: Record<K, any>
+): z.ZodEnum<[K, ...K[]]> {
+  const [firstKey, ...otherKeys] = Object.keys(obj) as K[];
+  return z.enum([firstKey, ...otherKeys]);
+}
 
 type FormWrapperProps = {
-  formSchema: FormSchema;
-} & React.ComponentProps<typeof Form>;
+  defaultValues: SettingsObject;
+} & React.DetailedHTMLProps<
+  React.FormHTMLAttributes<HTMLFormElement>,
+  HTMLFormElement
+>;
 
-const FormWrapper = ({ formSchema, ...restProps }: FormWrapperProps) => {
-  const utils = trpc.useContext();
+const FormWrapper = (props: FormWrapperProps) => {
+  const { defaultValues: settings, ...restProps } = props;
 
-  const [form] = Form.useForm();
+  const defaultValues: FormValues = useMemo(() => {
+    return {
+      defaultDir: settings.app.defaultDir,
+      disablePreviewCompression:
+        settings.image.preview.webpOptions.lossless || false,
+    };
+  }, [settings]);
 
-  // form.validateFields();
+  const {
+    handleSubmit,
+    control,
+    setError,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues,
+    resolver: zodResolver(formValuesSchema),
+  });
 
-  // const valuesSchema = useMemo(
-  //   () =>
-  //     z.object(
-  //       Object.fromEntries(
-  //         formSchema.map(
-  //           <T extends FormField<keyof FormFieldValueType>>(
-  //             field: T
-  //           ): [string, z.ZodType<FormFieldTypes[T['key']]>] => {
-  //             if (field.type === 'directory') return [field.key, z.string()];
-  //             if (field.type === 'string') return [field.key, z.string()];
-  //             if (field.type === 'number') return [field.key, z.number()];
-  //             throw new Error('Invalid field type');
-  //           }
-  //         )
-  //       )
-  //     ),
-  //   [formSchema]
-  // );
+  const mutation = trpc.setSettings.useMutation();
 
-  const onFinish = (values: any) => {
-    console.log(values);
+  const onSubmit = (data: unknown) => {
+    const parsed = formValuesSchema.safeParse(data);
+    if (!parsed.success) {
+      parsed.error.issues.forEach((issue) => {
+        const name = issue.path[0] as keyof FormValues;
+        setError(name, {
+          message: issue.message,
+        });
+      });
+      return;
+    }
+    const { defaultDir, disablePreviewCompression } = data as FormValues;
+    const newSettings: SettingsObject = settings;
+    newSettings.app.defaultDir = defaultDir;
+    newSettings.image.preview.webpOptions.lossless = disablePreviewCompression;
+    mutation.mutate({ settings: newSettings });
   };
 
   return (
-    <Form
-      // eslint-disable-next-line react/jsx-props-no-spreading
-      {...restProps}
-      form={form}
-      onFinish={onFinish}
-    >
-      {formSchema.map((field) => {
-        switch (field.type) {
-          case 'directory':
-            return (
-              <Form.Item
-                key={field.key}
-                name={field.key}
-                label={field.label}
-                rules={[
-                  {
-                    required: true,
-                    message: 'Please input a directory path',
-                  },
-                  {
-                    validator: async (_, value) =>
-                      validateDirectory(value, utils),
-                    message: 'Please input a valid directory path',
-                  },
-                ]}
-              >
-                <DirectoryAutoComplete placeholder={field.placeholder} />
-              </Form.Item>
-            );
-          default:
-            return null;
-        }
-      })}
-      <Form.Item wrapperCol={{ span: 16 }}>
-        <Button type="primary" htmlType="submit">
-          Save
-        </Button>
-      </Form.Item>
-    </Form>
+    <form onSubmit={handleSubmit(onSubmit)} {...restProps}>
+      <Typography>Default directory</Typography>
+      <Controller
+        name="defaultDir"
+        control={control}
+        rules={{ required: true }}
+        render={({ field, fieldState: { error } }) => (
+          <Input
+            {...field}
+            style={{ width: '100%', marginBottom: 16 }}
+            placeholder="Default directory"
+            status={error && 'error'}
+          />
+        )}
+      />
+
+      <Typography>Disable Preview Compression</Typography>
+      <Controller
+        name="disablePreviewCompression"
+        control={control}
+        render={({ ...field }) => (
+          <Checkbox {...field} style={{ width: '100%', marginBottom: 16 }} />
+        )}
+      />
+
+      <Button type="primary" htmlType="submit">
+        Save
+      </Button>
+    </form>
   );
 };
 
 const Settings = () => {
   const settingsResult = trpc.getSettings.useQuery();
 
-  const formComponent = (
-    <FormWrapper style={{ maxWidth: 600 }} formSchema={settingsFormSchema} />
-  );
-
   return (
     <div className={indexStyles.wrapper}>
       <Typography.Title>Settings</Typography.Title>
 
       {settingsResult.status === 'success' ? (
-        formComponent
+        <FormWrapper
+          style={{ maxWidth: 600 }}
+          defaultValues={settingsResult.data}
+        />
       ) : (
-        <Spin>{formComponent}</Spin>
+        <Spin />
       )}
     </div>
   );
