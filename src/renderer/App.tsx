@@ -9,7 +9,7 @@ import { ConfigProvider, Layout, Result, Button, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
 import Home from 'renderer/pages/Home';
 import Browse from 'renderer/pages/Browse';
-import Settings from 'renderer/pages/Settings';
+import Settings from 'renderer/pages/SettingsTemp';
 import Menu from 'renderer/components/Menu';
 import superjson from 'common/superjson';
 import { trpc } from './trpc';
